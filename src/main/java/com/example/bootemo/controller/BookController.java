@@ -14,6 +14,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Optional;
+
+
 @Controller
 public class BookController {
 
@@ -27,9 +30,17 @@ public class BookController {
     }
 
     @GetMapping("list")
-    public ModelAndView showListBook(@PageableDefault(size = 5) Pageable pageable){
-        Page<Book> books =bookService.findAll(pageable);
-        return new ModelAndView("list","book",books);
+    public ModelAndView showListBook(@PageableDefault(size = 5) Pageable pageable,@RequestParam("search") Optional<String> search){
+        ModelAndView modelAndView = new ModelAndView("list");
+        Page<Book> books;
+        if (!search.isPresent()){
+            books = bookService.findAll(pageable);
+        }else {
+            books = bookService.findByCode(search.get(), pageable);
+            modelAndView.addObject("search", search.get());
+        }
+        modelAndView.addObject("book", books);
+        return modelAndView;
     }
     @GetMapping("create")
     public ModelAndView showCreateForm(){
@@ -73,14 +84,6 @@ public class BookController {
     public ModelAndView deleteBook(@ModelAttribute("book") Book book){
         bookService.remove(book.getId());
         return new ModelAndView("redirect:list");
-    }
-    @GetMapping("list-search")
-    public ModelAndView showListSearch(@RequestParam("s") String search,@PageableDefault(size = 5) Pageable pageable){
-        Page<Book> books= bookService.findByCode(search,pageable);
-        ModelAndView modelAndView = new ModelAndView("list-search");
-        modelAndView.addObject("search",search);
-        modelAndView.addObject("book",books);
-        return modelAndView;
     }
 
 }
